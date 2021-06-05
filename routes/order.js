@@ -66,13 +66,67 @@ order_router.get("/see_cart", verifyCustomer, (req, res) => {
   });
 });
 
+order_router.post("/cart_checkout", verifyCustomer, (req, res) => {
+  var userId = req.userData.userId;
+  db.collection("cart")
+    .where("userId", "==", userId)
+    .get()
+    .then((snapshot) => {
+      cartData = [];
+      cartId = "";
+      snapshot.forEach((snap) => {
+        cartId = snap.id;
+        cartData.push(snap.data());
+      });
+      var orderDetails = cartData[0]["orders"];
+      var genOrderDetails = {};
+      Promise.all([getItems]).then((data) => {
+        var itemDetails = data[0];
+        //var deliveryPersons = data[1];
+        var pickUpLocations = [];
+        for (const order in orderDetails) {
+          genOrderDetails[order] = {
+            itemData: itemDetails[order].itemName,
+            quantity: orderDetails[order],
+          };
+          pickUpLocations.push(
+            itemDetails[order]["location"][
+              Math.floor(Math.random() * itemDetails[order]["location"].length)
+            ]
+          );
+        }
+        db.collection("orders")
+          .add({
+            userId,
+            pickUpLocations,
+            // deliveryId:
+            //   deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
+            order_details: genOrderDetails,
+            orderStage: 1,
+          })
+          .then((data) => {
+            db.collection("cart").doc(cartId).delete();
+            res.json({
+              orderId: data.id,
+              userId,
+              pickUpLocations,
+              // deliveryId:
+              //   deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
+              orderDetails: genOrderDetails,
+              orderStage: 1,
+            });
+          });
+      });
+    });
+});
+
 order_router.post("/place_order", verifyCustomer, (req, res) => {
   var userId = req.userData.userId;
   var orderDetails = JSON.parse(req.body.order_details);
   var genOrderDetails = {};
-  Promise.all([getItems, getDeliveryPersonIds]).then((data) => {
+  Promise.all([getItems]).then((data) => {
     var itemDetails = data[0];
-    var deliveryPersons = data[1];
+    //var deliveryPersons = data[1];
     var pickUpLocations = [];
     for (const order in orderDetails) {
       genOrderDetails[order] = {
@@ -89,8 +143,8 @@ order_router.post("/place_order", verifyCustomer, (req, res) => {
       .add({
         userId,
         pickUpLocations,
-        deliveryId:
-          deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
+        // deliveryId:
+        //   deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
         order_details: genOrderDetails,
         orderStage: 1,
       })
@@ -99,8 +153,8 @@ order_router.post("/place_order", verifyCustomer, (req, res) => {
           orderId: data.id,
           userId,
           pickUpLocations,
-          deliveryId:
-            deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
+          // deliveryId:
+          //   deliveryPersons[Math.floor(Math.random() * deliveryPersons.length)],
           orderDetails: genOrderDetails,
           orderStage: 1,
         });
