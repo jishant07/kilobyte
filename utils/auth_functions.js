@@ -80,6 +80,20 @@ function checkDelivery(userId) {
   });
 }
 
+function checkAdmin(userId) {
+  return new Promise((resolve, reject) => {
+    db.collection("admin")
+      .doc(userId)
+      .get()
+      .then((snapshot) => {
+        if (!snapshot.exists) {
+          reject("User not an admin");
+        }
+        resolve(true);
+      });
+  });
+}
+
 function verifyCustomer(req, res, next) {
   var bearerHeader = req.headers["authorization"];
   if (bearerHeader === undefined) {
@@ -109,6 +123,7 @@ function verifyDelivery(req, res, next) {
     jwt.verify(token, secret_key, (err, data) => {
       checkDelivery(data.userId)
         .then(() => {
+          req.userData = data;
           next();
         })
         .catch((err) => {
@@ -119,4 +134,24 @@ function verifyDelivery(req, res, next) {
   }
 }
 
-module.exports = { login, signup, verifyCustomer, verifyDelivery };
+function verifyAdmin(req, res, next) {
+  var bearerHeader = req.headers["authorization"];
+  if (bearerHeader === undefined) {
+    res.sendStatus(403);
+  } else {
+    var token = bearerHeader.split(" ")[1];
+    jwt.verify(token, secret_key, (err, data) => {
+      checkAdmin(data.userId)
+        .then(() => {
+          req.userData = data;
+          next();
+        })
+        .catch((err) => {
+          console.log(err);
+          res.sendStatus(403);
+        });
+    });
+  }
+}
+
+module.exports = { login, signup, verifyCustomer, verifyDelivery, verifyAdmin };

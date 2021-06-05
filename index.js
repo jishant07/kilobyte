@@ -6,6 +6,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/auth", require("./routes/auth"));
+app.use("/item", require("./routes/items"));
+app.use("/order", require("./routes/order"));
+app.use("/delivery", require("./routes/delivery"));
+
 app.get("/", (req, res) => {
   res.send("Server has started");
 });

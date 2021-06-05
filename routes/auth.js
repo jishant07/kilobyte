@@ -1,4 +1,4 @@
-const { login, signup, verifyCustomer } = require("../utils/auth_functions");
+const { login, signup } = require("../utils/auth_functions");
 const { success, fail } = require("../utils/messages");
 var auth_router = require("express").Router();
 
@@ -54,6 +54,14 @@ auth_router.post("/delivery_login", (req, res) => {
 
 auth_router.post("/delivery_signup", (req, res) => {
   signup_route("delivery", req, res);
+});
+
+auth_router.post("/admin_signup", (req, res) => {
+  signup_route("admin", req, res);
+});
+
+auth_router.post("/admin_login", (req, res) => {
+  login_route("admin", req, res);
 });
 
 module.exports = auth_router;
